@@ -69,7 +69,7 @@ def clear_session():
 
 def main():
     with gr.Blocks(css="footer {visibility: hidden}",theme=gr.themes.Soft()) as demo:
-        gr.Markdown("""<center><font size=10>Code analyze</center>""")
+        gr.Markdown("""<center><font size=10>自然语言回答</center>""")
         with gr.Row(equal_height=False):
             file_output = gr.Files(height=200)
             name_box = gr.Textbox()

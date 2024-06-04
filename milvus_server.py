@@ -14,26 +14,30 @@ def load_data(files: list[str]):
         chunk_size=1000, chunk_overlap=100)
     documents = text_splitter.split_documents(documents)
     embedding_list = []
+    document_content = []
     for document in documents:
-        document_embedding = model_embedding.encode(document)
+        document_embedding = model_embedding.encode(document.page_content)
+        document_content.append(document.page_content)
         embedding_list.append(document_embedding)
-    result = [document, embedding_list]
+    result = [document_content, embedding_list]
     return result
 
 
 
 
-sentence_transformer_model_path = ''
+sentence_transformer_model_path = r'C:\Users\zyj\Desktop\qwen\Jerry0\text2vec-base-chinese'
 model_embedding = SentenceTransformer(sentence_transformer_model_path, device='cpu')
 def file_split():
     pass
 
 def update_milvus(files, collection_name):
     data = load_data(files=files)
+    print(data)
+    print(len(data))
     connections.connect(uri="http://localhost:19530")
     fields = [
         FieldSchema(name='name', dtype=DataType.VARCHAR, is_primary=True, max_length=18888),
-        FieldSchema(name='name_embedding', dtype=DataType.VARCHAR, max_length=65535)
+        FieldSchema(name='name_embedding', dtype=DataType.FLOAT_VECTOR, max_length=65535, dim=768)
     ]
     schema = CollectionSchema(fields=fields, enable_dynamic_field=False)
     already = utility.has_collection(collection_name=collection_name)
@@ -53,7 +57,10 @@ def update_milvus(files, collection_name):
     if already:
         utility.drop_collection(collection_name=collection_name)
         utility.rename_collection(old_collection_name=collection_name + 'backup', new_collection_name=collection_name)
-    return get_collection()
+    result = get_collection()
+    result = [(x,) for x in result]
+    print(f"result*****************{result}")
+    return result
 
 def get_collection():
     return utility.list_collections()
@@ -75,6 +82,7 @@ def get_data_milvus(query, collection_name):
     request_1 = AnnSearchRequest(**search_param_1)
     result = collection.hybrid_search(
         reqs=[request_1],
+        rerank=WeightedRanker(1.0),
         output_fields=['name'],
         limit=2
         
